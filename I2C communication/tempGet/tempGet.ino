@@ -19,14 +19,14 @@ void loop() {
   Wire.endTransmission();   // Close write mode
 
 
-  Wire.getRequest(address, 1);    // Get 1 byte (8 bits) from device in read mode
+  Wire.requestFrom(address, 1);    // Get 1 byte (8 bits) from device in read mode
 
-  while (Wire.available() == 0)   // Wait until data is available (device is ready for transfer) and do nothing
+  while (Wire.available() == 0);   // Wait until data is available (device is ready for transfer) and do nothing
 
-  value = Wire.read()   // Read data from device and store in variable
+  int value = Wire.read();   // Read data from device and store in variable
 
 
-  int fValue = round(value*9.0/5.0 + 32.0)    // Convert data to farenheit
+  int fValue = round(value*9.0/5.0 + 32.0);    // Convert data to farenheit
 
   Serial.print("C: "); Serial.print(value); Serial.print("°C\t");
   Serial.print("F: "); Serial.print(fValue); Serial.println("°F");
