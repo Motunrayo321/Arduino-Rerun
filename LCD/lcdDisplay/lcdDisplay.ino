@@ -1,7 +1,7 @@
 #include <LiquidCrystal.h>
 
 
-LiquidCrystal lcd(19, 23, 18, 17, 16, 15);
+LiquidCrystal lcd(2, 3, 4, 5, 6, 7);
 
 int tim = 0;
 
