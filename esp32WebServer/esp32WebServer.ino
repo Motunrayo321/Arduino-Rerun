@@ -8,7 +8,8 @@ const int SPEAKER = 5;
 
 WiFiServer server(80);
 
-bool receiving = false;
+String header;
+String currentLine = "";
 
 
 void setup() {
@@ -18,7 +19,7 @@ void setup() {
 
   Serial.begin(115200);
 
-  Serial.println("Connecting to: ");
+  Serial.println("\nConnecting to: ");
   Serial.println(SSID);
 
   WiFi.begin(SSID, password);
@@ -30,7 +31,7 @@ void setup() {
 
   Serial.println("Connected!");
   server.begin();
-  Serial.println("IP Address: ");
+  Serial.println("\nIP Address: ");
   Serial.println(WiFi.localIP());
 }
 
@@ -40,50 +41,65 @@ void loop() {
   WiFiClient client = server.available();
 
   if (client) {
-    Serial.println("Client connected");
+    Serial.println("\nClient connected");
 
     bool sentHeader = false;
     bool currentLineIsBlank = true;
 
     while (client.connected()) {
       if (client.available()) {
+        // Serial.println("Available");
 
         char c = client.read();
         Serial.write(c);
-        Serial.println();
 
-        if (c == ' ' and receiving) receiving = false;
-        if (c == '?') receiving = true;
+        currentLine += c;
+        header += c;
+        
 
-        if (receiving) {
+        if (c == '\n') {
+          
+          if (currentLine != 0) {
 
-          if (c == 'L') {
-            Serial.println("Toggling pin: ");
-            int pin = client.parseInt();
-            Serial.println(pin);
-            digitalWrite(pin, !digitalRead(pin));
-            break;
+            if (header.indexOf("GET /26/on") >= 0) {
+              Serial.println("LED on");
+              // output26State = "on";
+              digitalWrite(RED, HIGH);
+            } else if (header.indexOf("GET /26/off") >= 0) {
+                Serial.println("LED off");
+                // output26State = "off";
+                digitalWrite(RED, LOW);
+            }
+
+
+            if (c == 'Q') {
+              Serial.println("Toggling pin: ");
+              int pin = client.parseInt();
+              Serial.println(pin);
+              digitalWrite(pin, !digitalRead(pin));
+              break;
+            }
+
+          
+
+            else if (c == 'Q') {
+              Serial.println("Adjusting frequency...");
+              int pin = client.parseInt();
+              int frequency = client.parseInt();
+
+              if (frequency = 0) noTone(pin);
+              else if (frequency > 0 && frequency <= 1000) tone(pin, frequency, 5000);
+              break;
+            }
           }
 
-          else if (c == 'S') {
-            Serial.println("Adjusting frequency...");
-            int pin = client.parseInt();
-            int frequency = client.parseInt();
-
-            if (frequency = 0) noTone(pin);
-            else if (frequency > 0 && frequency <= 1000) tone(pin, frequency, 5000);
-            break;
-          }
-        }
+        } else if (c != '\r') currentLine += c;
 
         if (!sentHeader) {
           client.println("HTTP/1.1 200 OK");
           client.println("Content-Type: text/html\n");
-
-          client.println("<form action='' method='get'>");
-          client.println("<input type='hidden' name='L' value='2' />");
-          client.println("<input type='submit' value='Toggle Red' />");
-          client.println("</form>");
+          
+          client.println("<p><a href=\"/26/off\"><button class=\"button button2\">OFF</button></a></p>");
 
           client.println("<form action='' method='get'>");
           client.println("<input type='range' name='S' min='0' max='1000' step='100' value='5'/>");
@@ -93,14 +109,11 @@ void loop() {
           sentHeader = true;
         }
 
-        if (c == '\n' and currentLineIsBlank) break;
-        if (c == '\n' and currentLineIsBlank) currentLineIsBlank = true;
-
-        else if (c != '\r') currentLineIsBlank = false;
+        currentLine = "";
       }
     }
 
-    delay(50);
+    // delay(50);
     client.stop();
 
     Serial.println("Client disconnected");
